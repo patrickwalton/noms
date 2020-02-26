@@ -10,7 +10,7 @@ def _client():
 
 def _search():
     client = _client()
-    broc_search = client.search_query("Raw Broccoli")
+    broc_search = client.search_query("Broccoli")
     assert "items" in broc_search.json.keys()
     assert len(broc_search.json["items"]) > 5
     uni_search = client.search_query("Unicorn meat")

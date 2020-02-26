@@ -1,4 +1,5 @@
 import operator
+import pprint
 from ..objects.food import Food
 
 def search_parse(search_results):
@@ -9,12 +10,15 @@ def search_parse(search_results):
     if 'errors' in search_results.keys():
         return None
     # Store the search term that was used to produce these results
-    search_term = search_results["list"]["q"]
+    pprint.pprint(search_results)
+    search_term = search_results["foods"]
     # Store a list of dictionary items for each result of the search
     items = []
-    for item in search_results["list"]["item"]:
+    for item in search_results["foods"]:
         # Remove extraneous pieces of data
-        del item["ds"]; del item["manu"]; del item["offset"]
+        #pprint.pprint(item)
+        # print("-----")
+        # del item["ds"]; del item["manu"]; del item["offset"]
         items.append(item)
     return dict(search_term=search_term, items=items)
 
@@ -37,7 +41,7 @@ def food_parse(food_results, nutrient_dict, values):
         tracked_nutrients.append(nutrient["nutrient_id"])
     food_results = food_results["foods"]
     # Remove extraneous pieces of data in the food description
-    to_del = {'food':["sr", "type", "sources", "footnotes", "langual"], 
+    to_del = {'food':["sr", "type", "sources", "footnotes", "langual"],
               'desc':["sd", "sn", "cn", "manu", "nf", "cf", "ff", "pf", "r", "rd", "ru", "ds"],
               # This current implementation deletes the measurement data from the database,
               # this could be changed later to provide richer data and easy UX tools (select measure)
@@ -94,7 +98,7 @@ def food_parse(food_results, nutrient_dict, values):
         n = 0
         for nutrient in food["food"]["nutrients"]:
             if nutrient_nicknames[n] != None:
-                food["food"]["nutrients"][n]["name"] = nutrient_nicknames[n] 
+                food["food"]["nutrients"][n]["name"] = nutrient_nicknames[n]
             nutrient["value"] = nutrient["value"] * (values[f]/100)
             n += 1
         f += 1
