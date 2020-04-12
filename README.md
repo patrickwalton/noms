@@ -10,7 +10,7 @@ noms is a fun and simple Python package that allows you to obtain and work with 
 
 This amounts to 41 nutrients being tracked, but many more are available from the database such as amino acids and other lipids. These can be viewed in all_nutrient_ids.txt, and support for other nutrients will be added in the future as requested. You can add support for these yourself by editing noms/objects/nutrient_ids.json accordingly with entries from all_nutrient_ids.txt.
 
-Note: The Standard Reference Database is used explicitly without the addition of the USDA's Branded Foods database, as only the former allows for highly detailed reports which track 168 different nutrients -- much more information than you would find on an item's nutrition facts! This is especially valuable for nutritionists or people interested in their own health to explore the nutritional content of whole foods. 
+Note: The Standard Reference Database is used explicitly without the addition of the USDA's Branded Foods database, as only the former allows for highly detailed reports which track 168 different nutrients -- much more information than you would find on an item's nutrition facts! This is especially valuable for nutritionists or people interested in their own health to explore the nutritional content of whole foods.
 
 ## Installation
 The noms package is listed on PyPI and can be installed with pip. Simply do:
@@ -58,7 +58,7 @@ The foods() method returned a list of two Food objects when given the arguments 
 m = noms.Meal(food_list)
 ```
 
-## Generating and Displaying a Report 
+## Generating and Displaying a Report
 The report is a dictionary which shows if RDAs (or Adequate Intakes) are being met or exceeded. These values are assigned by default in noms.objects.nutrient_dict, but support will be added to modify these settings in the future.
 ```python
 r = noms.report(m)
@@ -198,3 +198,11 @@ for rec in recommendations:
 56.76g of Peanut Butter, smooth (Includes foods for USDA's Food Distribution Program)
 ```
 It is reasonable that the function returned these foods from the pantry as the current daily nutrition is low in protein and Omega-3s, which chia seeds satisfy the most.
+
+## Testing for the new API
+This fork addresses the issues with the new FDC API. The codebase needs to be tested.
+To run existing tests, execute:
+
+```
+python3 -m pytest -rfs tests/
+```
