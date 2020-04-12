@@ -3,17 +3,20 @@ import pprint
 from noms.client.client import Client
 from noms.client.searchresults import SearchResults
 from noms.objects.food import Food
+from noms.objects.food import Meal
+
 
 class Testing(unittest.TestCase):
 
     def setUp(self):
         key = open("key.txt", "r").read()
         client = Client(key)
-        self.client = client
 
-    def test_client_init(self):
+        self.client = client
         assert type(self.client) == Client
-        return client
+
+        # self.meal = self.meal()
+        # self.pantry = self.pantry()
 
     def test_search(self):
         client = self.client
@@ -21,7 +24,7 @@ class Testing(unittest.TestCase):
         assert "items" in broc_search.json.keys()
         assert len(broc_search.json["items"]) > 5
         uni_search = client.search_query("Unicorn meat")
-        # pprint.pprint(uni_search)
+        pprint.pprint(uni_search)
         # assert uni_search == None
 
     def test_foods(self):
@@ -46,8 +49,8 @@ class Testing(unittest.TestCase):
         assert type(food_list[0]) == Food
         assert "name" in food_list[0].desc.keys()
 
-    def test_meal():
-        client = _client()
+    def meal(self):
+        client = self.client
         food_list = client.get_foods({
             '01001':20,
             '01132':100,
@@ -62,22 +65,24 @@ class Testing(unittest.TestCase):
             '19904':10,
             '14400':1000 # literally an entire liter of coke
         })
-        meal = noms.Meal(food_list)
+        if food_list is None:
+            raise Exception("NPE on client.get_foods()")
+        meal = Meal(food_list)
         assert type(meal) == noms.Meal
         assert len(meal.foods) == 12
         return meal
 
-    def _report(meal):
+    def test_report(meal):
         r = noms.report(meal)
         assert len(r) == len(noms.nutrient_dict)
 
-    def _sort(meal):
+    def test_sort(meal):
         m = copy.deepcopy(meal)
         m.sort_by_top("Sugar")
         assert m.foods[0].desc["ndbno"] == '14400' # the most sugar-dense food in the meal is coke
 
-    def _pantry():
-        client = _client()
+    def pantry(self):
+        client = self.client
         pantry_items = {
         # DAIRY AND EGG
         "01001":100, # butter, salted

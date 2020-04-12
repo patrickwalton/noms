@@ -10,13 +10,13 @@ def search_parse(search_results):
     if 'errors' in search_results.keys():
         return None
     # Store the search term that was used to produce these results
-    pprint.pprint(search_results)
+    # pprint.pprint(search_results)
     search_term = search_results["foods"]
     # Store a list of dictionary items for each result of the search
     items = []
     for item in search_results["foods"]:
         # Remove extraneous pieces of data
-        #pprint.pprint(item)
+        # pprint.pprint(item)
         # print("-----")
         # del item["ds"]; del item["manu"]; del item["offset"]
         items.append(item)
@@ -28,8 +28,17 @@ def food_parse(food_results, nutrient_dict, values):
     not tracked. It also exchanges nutrient names for their more common names, or "nicknames",
     as defined in noms.objects.nutrient_dict
     """
+
+    if food_results is None:
+        return None
+
     if len(food_results["foods"]) == 0:
         return None
+
+
+    pprint.pprint(food_results)
+
+
     food_arr = []
     tracked_nutrients = []
     nutrient_nicknames = []
@@ -73,12 +82,12 @@ def food_parse(food_results, nutrient_dict, values):
             while n < len(tracked_nutrients) and nutrient["nutrient_id"] > tracked_nutrients[n]:
                 to_insert = nutrient_dict[n]
                 to_insert.update(value=0)
-                food["food"]["nutrients"].insert(n,to_insert)
+                food["food"]["nutrients"].insert(n, to_insert)
                 n += 1
         while n < len(tracked_nutrients) and food["food"]["nutrients"][-1]["nutrient_id"] < tracked_nutrients[-1]:
             to_insert = nutrient_dict[n]
             to_insert.update(value=0)
-            food["food"]["nutrients"].insert(n,to_insert)
+            food["food"]["nutrients"].insert(n, to_insert)
             n += 1
         n = 0
         n_to_del = []
