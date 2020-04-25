@@ -4,6 +4,7 @@ FoodData Central requires a Data.gov key: https://api.data.gov/signup/
 
 from enum import Enum
 import json
+import time
 
 import requests
 
@@ -14,6 +15,8 @@ DATA_TYPES = [
     'Branded',
     'Survey (FNDDS)'
 ]
+
+
 class DataType(Enum):
     Foundation = 'Foundation'
     SR = 'SR Legacy'          # USDA Standard Refernece
@@ -39,6 +42,7 @@ class Client2:
     def __init__(self, api_key):
         self.api_key = api_key
 
+        self.interval = 1  # current API does not allow over 1 request/second.
 
     def process_args(self, **kwargs):
         """Process and validate arguments from any endpoint.
@@ -132,11 +136,12 @@ class Client2:
 
         return data
 
-
     def food(self,
-             fdcId:str,
-             format:Format=Format.abridged,
-             nutrients:list=None):
+             fdcId: str,
+             format: Format=Format.abridged,
+             nutrients: list=None):
+
+        time.sleep(self.interval)
         """Retrieves a single food item by an FDC ID. Optional format and
         nutrients can be specified.
             Endpoint: /food/{fdcId}
@@ -146,18 +151,19 @@ class Client2:
             'format': format,
             'nutrients': nutrients
         })
-        response = requests.get(
-            BASE_URL + f'/food/{fdcId}',
-            params={'api_key': self.api_key, **data}
-        )
+
+        response = self.api_post(data)
+
         obj = json.loads(response.text) if response.status_code == 200 else None
         return response, obj
 
 
     def foods(self,
-              fdcIds:list,
-              format:Format=Format.abridged,
-              nutrients:list=None):
+              fdcIds: list,
+              format: Format=Format.abridged,
+              nutrients: list=None):
+
+        time.sleep(self.interval)
         """Retrieves a list of food items by a list of up to 20 FDC IDs.
         Optional format and nutrients can be specified. Invalid FDC ID's or ones
         that are not found are omitted and an empty set is returned if there are
@@ -170,14 +176,10 @@ class Client2:
             'format': format,
             'nutrients': nutrients
         })
-        response = requests.post(
-            BASE_URL + '/foods',
-            params={'api_key': self.api_key},
-            json=data
-        )
+
+        response = self.api_post(data)
         obj = json.loads(response.text) if response.status_code == 200 else None
         return response, obj
-
 
     def foods_list(self,
                    dataTypes:list=[DataType.Foundation, DataType.SR],
@@ -205,6 +207,21 @@ class Client2:
         obj = json.loads(response.text) if response.status_code == 200 else None
         return response, obj
 
+    def api_post(self, data):
+        """ send POST to API using standard configuration"""
+        headers = {'Content-Type': 'application/json'}
+
+        response = requests.post(
+            BASE_URL + '/foods/search/?api_key='+self.api_key,
+            headers=headers,
+            data=json.dumps(data)
+        )
+
+        if response.status_code != 200:
+            print("WARNING: response code %s" % response.status_code)
+            print(response.text)
+
+        return response
 
     def foods_search(self,
                      query: str,
@@ -232,10 +249,16 @@ class Client2:
         del data['dataType']
         _json = {**data, 'dataType': dataType}
         print(_json)
-        response = requests.post(
-            BASE_URL + '/foods/search',
-            params={'api_key': self.api_key, 'dataType': dataType},
-            json=_json,
-        )
+        #
+        # headers = {'Content-Type': 'application/json'}
+        #
+        # response = requests.post(
+        #     BASE_URL + '/foods/search/?api_key='+self.api_key,
+        #     headers=headers,
+        #     data=json.dumps(data)
+        # )
+
+        response = self.api_post(data)
+
         obj = json.loads(response.text) if response.status_code == 200 else None
         return response, obj
