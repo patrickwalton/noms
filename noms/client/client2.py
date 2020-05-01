@@ -5,7 +5,6 @@ FoodData Central requires a Data.gov key: https://api.data.gov/signup/
 from enum import Enum
 import json
 import time
-
 import requests
 
 BASE_URL = 'https://api.nal.usda.gov/fdc/v1'
@@ -36,6 +35,26 @@ class Sorting(Enum):
     description = 'lowercaseDescription.keyword'
     fdcId = 'fdcId'
     publishedDate = 'publishedDate'
+
+
+# https://stackoverflow.com/questions/7204805/how-to-merge-dictionaries-of-dictionaries
+def mergedicts(a, b, path=None):
+    """merges b into a"""
+    if path is None:
+        path = []
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                mergedicts(a[key], b[key], path + [str(key)])
+            elif a[key] == b[key]:
+                pass  # same leaf value
+            elif isinstance(a[key], list) and isinstance(b[key], list):
+                a[key] = a[key] + b[key]
+            else:
+                raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+        else:
+            a[key] = b[key]
+    return a
 
 
 class Client2:
@@ -101,7 +120,11 @@ class Client2:
                 assert isinstance(dt, DataType), \
                     f"'dataType' should be a list of noms.DataType enums. '{dt}' not understood."
                 _dataTypes.append(dt.value)
+
+            # this statement leads to a 400 error - USDA confirms a documentation error.
             data.update({'dataType': ','.join(_dataTypes)})
+            # nees to use nested JSON instead!
+            data.update({'dataType': _dataTypes})
             # data.update({'dataType': _dataTypes})
             # data.update({'dataType': "Foundation,SR Legacy"})
 
@@ -182,7 +205,7 @@ class Client2:
         return response, obj
 
     def foods_list(self,
-                   dataTypes:list=[DataType.Foundation, DataType.SR],
+                   dataTypes:list=[DataType.Foundation, DataType.SR, DataType.FNDDS],
                    pageSize:int=50,
                    pageNumber:int=1,
                    sortBy:Sorting=Sorting.dataType,
@@ -211,6 +234,9 @@ class Client2:
         """ send POST to API using standard configuration"""
         headers = {'Content-Type': 'application/json'}
 
+        # pprint.pprint(data)
+        # sys.exit(0)
+
         response = requests.post(
             BASE_URL + '/foods/search/?api_key='+self.api_key,
             headers=headers,
@@ -225,12 +251,12 @@ class Client2:
 
     def foods_search(self,
                      query: str,
-                     dataTypes:list=[DataType.Foundation, DataType.SR],
+                     dataTypes:list=[DataType.Foundation, DataType.SR, DataType.FNDDS],
                      pageSize:int=50,
                      pageNumber:int=1,
                      sortBy:Sorting=Sorting.dataType,
                      reverse=False,
-                     brandOwner:str=None):
+                     brandOwner:str=None, getAll=False):
         """Search for foods using keywords. Results can be filtered by dataType
         and there are options for result page sizes or sorting.
             Endpoint: /foods/search
@@ -245,20 +271,41 @@ class Client2:
             'reverse': reverse,
             'brandOwner': brandOwner
         })
-        dataType = data['dataType']
-        del data['dataType']
-        _json = {**data, 'dataType': dataType}
-        print(_json)
-        #
-        # headers = {'Content-Type': 'application/json'}
-        #
-        # response = requests.post(
-        #     BASE_URL + '/foods/search/?api_key='+self.api_key,
-        #     headers=headers,
-        #     data=json.dumps(data)
-        # )
+        # dataType = data['dataType']
+        # del data['dataType']
+        # _json = {**data, 'dataType': dataType}
 
+        # pprint.pprint(data)
         response = self.api_post(data)
 
         obj = json.loads(response.text) if response.status_code == 200 else None
+        if len(obj["foods"]) == 0:
+            print("WARNING: nothing found for query {%s}" % query)
+
+        if obj["totalPages"] > 1:
+            if getAll:
+                print("load all pages of %s" % obj["totalPages"])
+                for i in range(2, obj["totalPages"]+1):
+                    response, next_page_obj = self.foods_search(query=query,
+                                      dataTypes=dataTypes,
+                                      pageSize=pageSize,
+                                      pageNumber=i,
+                                      sortBy=sortBy,
+                                      reverse=reverse,
+                                      brandOwner=brandOwner,
+                                      getAll=False)
+                    # pprint.pprint(next_page_obj.keys())
+                    del(next_page_obj["currentPage"])
+                    del(next_page_obj["foodSearchCriteria"])
+
+                    obj = mergedicts(obj, next_page_obj)
+
+        assert obj is not None, "obj is unexpectedly None"
         return response, obj
+
+    def pretty_print_results(self, foods):
+        # dict_keys(['fdcId', 'description', 'dataType',
+        # 'gtinUpc', 'publishedDate', 'brandOwner', 'ingredients', 'foodNutrients', 'allHighlightFields', 'score'])
+
+        for f in foods:
+            print(f['description'] + " / " + f['dataType'] + " / " + str(f['fdcId']))
