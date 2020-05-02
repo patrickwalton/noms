@@ -46,7 +46,7 @@ class Foods:
 
         return result
 
-    def find_organic(self, query):
+    def find_organic(self, query, getAll=False):
         """ do exact search and match keyword organic in ingredients"""
 
         # search strategy: for cooking, get exactly one reference product. Later on maybe need to compute an average abstract product.
@@ -57,7 +57,7 @@ class Foods:
         # step 2: search on Branded type
         q = "description:" + query
         filter = [DataType.Foundation, DataType.SR, DataType.FNDDS]
-        response1, obj1 = self.client.foods_search(q, pageSize=200, dataTypes=filter)
+        response1, obj1 = self.client.foods_search(q, pageSize=200, dataTypes=filter, getAll=getAll)
         if len(obj1['foods']) == 0:
             raise Exception("nothing found for %s" % query)
 
@@ -75,7 +75,7 @@ class Foods:
                 return f
 
         # search Branded foods
-        response2, obj2 = self.client.foods_search(q, pageSize=200, dataTypes=[DataType.Branded])
+        response2, obj2 = self.client.foods_search(q, pageSize=200, dataTypes=[DataType.Branded], getAll=getAll)
         if len(obj1['foods']) == 0:
             raise Exception("nothing found for %s" % query)
 
