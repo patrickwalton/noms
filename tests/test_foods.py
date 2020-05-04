@@ -31,11 +31,22 @@ class TestFoods(unittest.TestCase):
     def test_find_organic(self):
 
         search = ["broccoli", "carrots", "potatoes", "egg", "cauliflower",
-                  "cucumber", "paprika", "pepper", "ginger", "cinnamon"]
+                  "cucumber", "paprika", "pepper", "ginger", "cinnamon",
+                  "strawberries"]
+
+        search = ["bean sauce",
+        "bean sprouts",
+        "beaten eggs",
+        "bechamel",
+        "beef bouillon granules",
+        "beef consomme"]
+
         for s in search:
             # print("look for %s..." % s)
             r = self.foods.find_organic(s)
             try:
-                print("%s -> %s / %s" % (r["description"], r["fdcId"], r['dataType']))
-            except Exception:
-                pprint.pprint(r)
+                print("%s -> %s / %s, nutr_count = %s" % (r["description"], r["fdcId"], r['dataType'], len(r["foodNutrients"])))
+            except Exception as e:
+                print(e)
+                print("result keys")
+                pprint.pprint(r.keys())

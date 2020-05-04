@@ -46,8 +46,51 @@ class Foods:
 
         return result
 
+    def find_organic_select(self, foods, query):
+
+        # if already 1 match found
+        if isinstance(foods, dict):
+            return foods
+        if len(foods) == 1:
+            return foods[0]
+
+        # build a list of candidates to maximize data richness for nutrients
+        candidates = []
+
+        for f in foods:  # step 1a/1b
+            query1 = query.lower()
+            description = f['description'].lower()
+            matches = [query1, query1 + ", raw", query1 + ", raw, nfs", query1 + ", nfs", query1 + ", fresh"]
+
+            if description in matches or ("organic" and query in description):
+                candidates.append(f)
+
+        if len(candidates) == 1:
+            print("exact match.")
+            return candidates[0]
+
+        if len(candidates) > 1:
+            print("found %s candidates, show description, data type, count of nutrients, count of ingredients", len(candidates))
+            for c in candidates:
+                try:
+                    print("%s | %s | %s | %s | %s" % (c["description"], c["dataType"], len(c["foodNutrients"]), len(c["ingredients"].split(",")), c["fdcId"]))
+                except Exception:
+
+                    print("%s | %s | %s | %s" % (c["description"], c["dataType"], len(c["foodNutrients"]), c["fdcId"]))
+
+            # select candidate with max count of nutrients
+            search_result = candidates[0]
+            max_nutrients = len(search_result["foodNutrients"])
+            for c in candidates:
+                nutrients_count = len(c["foodNutrients"])
+                if nutrients_count > max_nutrients:
+                    max_nutrients = nutrients_count
+                    search_result = c
+
+            return search_result
+
     def find_organic(self, query, getAll=False):
-        """ do exact search and match keyword organic in ingredients"""
+        """ find organic foods"""
 
         # search strategy: for cooking, get exactly one reference product. Later on maybe need to compute an average abstract product.
         # step 0: if exactly one match, this might be non-organic, but consider so far to be a special case
@@ -61,61 +104,27 @@ class Foods:
         if len(obj1['foods']) == 0:
             raise Exception("nothing found for %s" % query)
 
-        # if already 1 match found
-        if isinstance(obj1['foods'], dict):
-            return obj1['foods']
-        if len(obj1['foods']) == 1:
-            return obj1['foods'][0]
 
-        for f in obj1['foods']:  # step 1a/1b
-            description = f['description'].lower()
-            matches = [query, query + ", raw", query + ", raw, nfs", query + ", nfs", query + ", fresh"]
-
-            if description in matches:
-                return f
+        result = self.find_organic_select(obj1['foods'], query)
+        if result is not None:
+            return result
 
         # search Branded foods
         response2, obj2 = self.client.foods_search(q, pageSize=200, dataTypes=[DataType.Branded], getAll=getAll)
-        if len(obj1['foods']) == 0:
+        if len(obj2['foods']) == 0:
             raise Exception("nothing found for %s" % query)
 
-        # if already 1 match found
-        if isinstance(obj2['foods'], dict):
-            return obj2['foods']
-        if  len(obj2['foods']) == 1:
-            return obj2['foods'][0]
+        result = self.find_organic_select(obj2['foods'], query)
 
-        for f in obj2['foods']:  # step 1a/1b
-            description = f['description'].lower()
-            matches = [query, query + ", raw", query + ", fresh"]
-            if description in matches:
-                return f
-
+        if result is not None:
+            return result
         print("=== NO SATISFYING MATCH FOUND :-[] ===")
         print("== non-branded foods ==")
         self.client.pretty_print_results(obj1["foods"])
         print("== branded foods ==")
+        self.client.pretty_print_results(obj2["foods"])
         raise Exception("nothing found for %s" % query)
-        #
-        # response2, obj2 = self.client.foods_search(query+", raw", pageSize=200)
-        # assert obj2 is not None
-        #
-        # foods = obj1['foods'] + obj2['foods']
-        #
-        # result = []
-        #
-        # # pprint.pprint(obj.keys())
-        # pagesCount = obj1["totalPages"]
-        # if pagesCount > 1:
-        #     print("WARNING: total pages count is %s" % pagesCount)
-        #
-        # for item in foods:
-        #     if item["description"].lower() == query and self.is_organic(item):
-        #         result.append(item)
-        #     else:
-        #         print("skip %s" % (item['description']))
-        #
-        return obj1['foods']
+
 
     def remove_punctuations(self, str):
         # https://www.programiz.com/python-programming/examples/remove-punctuation
