@@ -34,12 +34,7 @@ class TestFoods(unittest.TestCase):
                   "cucumber", "paprika", "pepper", "ginger", "cinnamon",
                   "strawberries"]
 
-        search = ["bean sauce",
-        "bean sprouts",
-        "beaten eggs",
-        "bechamel",
-        "beef bouillon granules",
-        "beef consomme"]
+        search = ["amaretti"]
 
         for s in search:
             # print("look for %s..." % s)

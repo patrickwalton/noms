@@ -70,12 +70,11 @@ class Foods:
             return candidates[0]
 
         if len(candidates) > 1:
-            print("found %s candidates, show description, data type, count of nutrients, count of ingredients", len(candidates))
+            print("found %s candidates, show description, data type, count of nutrients, count of ingredients" % len(candidates))
             for c in candidates:
                 try:
                     print("%s | %s | %s | %s | %s" % (c["description"], c["dataType"], len(c["foodNutrients"]), len(c["ingredients"].split(",")), c["fdcId"]))
                 except Exception:
-
                     print("%s | %s | %s | %s" % (c["description"], c["dataType"], len(c["foodNutrients"]), c["fdcId"]))
 
             # select candidate with max count of nutrients
@@ -102,8 +101,7 @@ class Foods:
         filter = [DataType.Foundation, DataType.SR, DataType.FNDDS]
         response1, obj1 = self.client.foods_search(q, pageSize=200, dataTypes=filter, getAll=getAll)
         if len(obj1['foods']) == 0:
-            raise Exception("nothing found for %s" % query)
-
+            print("WARNING: nothing non-branded found for %s" % query)
 
         result = self.find_organic_select(obj1['foods'], query)
         if result is not None:
@@ -112,7 +110,7 @@ class Foods:
         # search Branded foods
         response2, obj2 = self.client.foods_search(q, pageSize=200, dataTypes=[DataType.Branded], getAll=getAll)
         if len(obj2['foods']) == 0:
-            raise Exception("nothing found for %s" % query)
+            print("WARNING: nothing found for %s" % query)
 
         result = self.find_organic_select(obj2['foods'], query)
 
