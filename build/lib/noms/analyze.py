@@ -1,5 +1,5 @@
 from scipy.optimize import minimize
-from . import Meal
+from .objects.food import Food, Meal
 import copy 
 import sys
 import os
